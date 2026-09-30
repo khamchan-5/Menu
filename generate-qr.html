@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สร้าง QR Code ประจำโต๊ะ</title>
+    <!-- โหลดไลบรารีสร้าง QR Code -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --dark: #0f172a;
+        }
+
+        body {
+            font-family: 'Sukhumvit Set', sans-serif;
+            background: #f1f5f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+            max-width: 450px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .header-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #334155;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .btn-print {
+            background: #10b981;
+        }
+
+        /* ส่วนการ์ดแสดง QR Code สำหรับพิมพ์ */
+        #qr-card {
+            display: none;
+            margin-top: 25px;
+            padding: 25px;
+            border: 2px dashed #cbd5e1;
+            border-radius: 16px;
+            background: #fff;
+        }
+
+        #qrcode {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        /* รูปแบบเมื่อสั่งพิมพ์ (Print CSS) */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #qr-card, #qr-card * {
+                visibility: visible;
+            }
+            #qr-card {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                border: none;
+            }
+            .btn-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <a href="admin.html" class="header-link">⬅️ กลับหน้า Admin Dashboard</a>
+        <h2 style="margin-top:0; color:var(--dark);">📲 สร้าง QR Code สั่งอาหาร</h2>
+        
+        <div class="form-group">
+            <label for="table-number">ระบุหมายเลขโต๊ะ:</label>
+            <input type="text" id="table-number" placeholder="ตัวอย่าง: 1, 2, A1" autocomplete="off">
+        </div>
+
+        <button class="btn" onclick="generateQR()">สร้าง QR Code</button>
+
+        <!-- การ์ดผลลัพธ์ QR Code -->
+        <div id="qr-card">
+            <h3 style="margin:0; font-size:1.5rem; color:var(--dark);">ร้านอาหารของเรา</h3>
+            <p style="color:#64748b; margin:5px 0 0 0;">สแกนเพื่อดูเมนูและสั่งอาหาร</p>
+            
+            <div id="qrcode"></div>
+
+            <h1 id="display-table" style="margin:0; color:var(--primary); font-size:2rem;">โต๊ะ 1</h1>
+            <small id="display-url" style="color:#94a3b8; word-break: break-all; display:block; margin-top:10px;"></small>
+
+            <button class="btn btn-print" style="margin-top:20px;" onclick="window.print()">🖨️ พิมพ์ QR Code นี้</button>
+        </div>
+    </div>
+
+    <script>
+        let qrcodeObj = null;
+
+        function generateQR() {
+            const tableNum = document.getElementById('table-number').value.trim();
+            if (!tableNum) {
+                alert('กรุณากรอกหมายเลขโต๊ะ');
+                return;
+            }
+
+            // ดึง URL ปัจจุบันของเว็บไซต์ (เพื่อส่งต่อไปยังหน้า index.html พร้อมเลขโต๊ะ)
+            const baseUrl = window.location.origin + window.location.pathname.replace('generate-qr.html', 'index.html');
+            const targetUrl = `${baseUrl}?table=${encodeURIComponent(tableNum)}`;
+
+            // เคลียร์ QR Code เดิมก่อน
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = '';
+
+            // สร้าง QR Code ใหม่
+            qrcodeObj = new QRCode(qrContainer, {
+                text: targetUrl,
+                width: 180,
+                height: 180,
+                colorDark: "#0f172a",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            // แสดงผลการ์ด
+            document.getElementById('display-table').innerText = `โต๊ะ ${tableNum}`;
+            document.getElementById('display-url').innerText = targetUrl;
+            document.getElementById('qr-card').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

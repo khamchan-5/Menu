@@ -1,0 +1,47 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;500;600;700&display=swap');
+
+* { 
+    box-sizing: border-box; 
+    font-family: 'Phetsarath OT', 'Noto Sans Lao', sans-serif; 
+}
+
+body { 
+    background: #f8fafc; 
+    margin: 0; 
+    padding: 15px; 
+    color: #1e293b; 
+}
+
+.container { 
+    max-width: 1000px; 
+    margin: 0 auto; 
+}
+
+.header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    background: white; 
+    padding: 15px 20px; 
+    border-radius: 12px; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+    margin-bottom: 15px; 
+}
+
+.card { 
+    background: white; 
+    padding: 20px; 
+    border-radius: 12px; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+    margin-bottom: 15px; 
+}
+
+a {
+    color: #3b82f6;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+a:hover {
+    text-decoration: underline;
+}

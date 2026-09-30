@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบสั่งอาหาร - ร้านอาหาร</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;500;600;700&display=swap');
+        * { box-sizing: border-box; font-family: 'Phetsarath OT', 'Noto Sans Lao', sans-serif; }
+        body { background: #f8fafc; margin: 0; padding: 15px; color: #1e293b; padding-bottom: 80px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .table-select { padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: bold; font-size: 1rem; background: #f1f5f9; }
+        
+        /* Navigation Tabs */
+        .nav-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+        .tab-btn { flex: 1; padding: 12px; border: none; background: white; border-radius: 10px; font-weight: bold; cursor: pointer; color: #64748b; box-shadow: 0 2px 4px rgba(0,0,0,0.03); transition: 0.2s; font-size: 0.95rem; }
+        .tab-btn.active { background: #3b82f6; color: white; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Category Filter */
+        .category-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; }
+        .cat-btn { padding: 8px 16px; border: 1px solid #cbd5e1; background: white; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 0.85rem; color: #475569; white-space: nowrap; }
+        .cat-btn.active { background: #10b981; color: white; border-color: #10b981; }
+
+        .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px; }
+
+        /* การ์ดเมนูอาหาร */
+        .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
+        .menu-card { border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; background: white; transition: 0.2s; position: relative; }
+        .menu-card:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .menu-card img { width: 100%; height: 120px; object-fit: cover; background-color: #f1f5f9; display: block; }
+        .menu-info { padding: 10px; }
+        .menu-name { font-weight: bold; margin-bottom: 5px; font-size: 0.9rem; }
+        .menu-price { color: #10b981; font-weight: bold; font-size: 0.85rem; }
+        
+        .btn-add { width: 100%; background: #3b82f6; color: white; border: none; padding: 8px; border-radius: 6px; margin-top: 8px; font-weight: bold; cursor: pointer; }
+        .btn-add:hover { background: #2563eb; }
+        
+        .out-of-stock { opacity: 0.6; pointer-events: none; }
+        .badge-out { position: absolute; top: 10px; right: 10px; background: #ef4444; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; z-index: 1; }
+
+        /* ตระกร้าสินค้า */
+        .cart-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding: 10px 0; }
+        .cart-qty { display: flex; align-items: center; gap: 8px; }
+        .btn-qty { background: #e2e8f0; border: none; width: 26px; height: 26px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        
+        .total-box { border-top: 2px dashed #e2e8f0; margin-top: 15px; padding-top: 15px; font-size: 1.1rem; font-weight: bold; display: flex; justify-content: space-between; }
+        .pending-total-box { background: #fef3c7; border: 1px solid #fde68a; padding: 12px; border-radius: 8px; margin-top: 15px; display: flex; justify-content: space-between; font-weight: bold; color: #b45309; }
+
+        .btn-send { width: 100%; background: #10b981; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 1.1rem; font-weight: bold; margin-top: 15px; cursor: pointer; }
+        .btn-send:hover { background: #059669; }
+        .btn-send:disabled { background: #cbd5e1; cursor: not-allowed; }
+
+        /* สถานะอาหาร */
+        .status-badge { padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; }
+        .status-pending { background: #fef3c7; color: #d97706; }
+        .status-cooking { background: #e0f2fe; color: #0284c7; }
+        .status-served { background: #dcfce7; color: #15803d; }
+
+        /* ปุ่มเรียกพนักงาน & เช็คบิล */
+        .service-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .btn-action { padding: 20px; border-radius: 12px; border: none; font-size: 1.1rem; font-weight: bold; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; color: white; transition: 0.2s; }
+        .btn-action:active { transform: scale(0.98); }
+        .btn-call { background: #f59e0b; }
+        .btn-call:hover { background: #d97706; }
+        .btn-bill { background: #8b5cf6; }
+        .btn-bill:hover { background: #7c3aed; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- ส่วนหัวเลือกโต๊ะ -->
+        <div class="header">
+            <h1 style="margin:0; font-size:1.3rem;">🍜 เมนูอาหาร</h1>
+            <div>
+                <label for="table-num" style="font-weight:bold;">เลือกโต๊ะ: </label>
+                <select id="table-num" class="table-select">
+                    <option value="1">โต๊ะ 1</option>
+                    <option value="2">โต๊ะ 2</option>
+                    <option value="3">โต๊ะ 3</option>
+                    <option value="4">โต๊ะ 4</option>
+                    <option value="5">โต๊ะ 5</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- แท็บสลับหน้า -->
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="switchTab('menu')">📋 สั่งอาหาร</button>
+            <button class="tab-btn" onclick="switchTab('status')">⏳ สถานะอาหาร</button>
+            <button class="tab-btn" onclick="switchTab('service')">🔔 บริการ / เช็คบิล</button>
+        </div>
+
+        <!-- 1. หน้าสั่งอาหาร -->
+        <div id="tab-menu" class="tab-content active">
+            <!-- หมวดหมู่อาหาร -->
+            <div class="category-tabs">
+                <button class="cat-btn active" onclick="filterCategory('all')">ทั้งหมด</button>
+                <button class="cat-btn" onclick="filterCategory('food')">🍽️ อาหาร</button>
+                <button class="cat-btn" onclick="filterCategory('drink')">🥤 เครื่องดื่ม</button>
+                <button class="cat-btn" onclick="filterCategory('dessert')">🍰 ของหวาน</button>
+            </div>
+
+            <div class="grid">
+                <div class="card">
+                    <h3 style="margin-top:0;">📋 รายการเมนู</h3>
+                    <div class="menu-grid" id="menu-container">
+                        <div style="grid-column: 1/-1; text-align:center; color:#94a3b8;">กำลังโหลดเมนู...</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-top:0;">🛒 ตระกร้าปัจจุบัน</h3>
+                    <div id="cart-list">
+                        <p style="text-align:center; color:#94a3b8;">ยังไม่มีรายการในตระกร้า</p>
+                    </div>
+                    
+                    <div class="total-box">
+                        <span>ราคารวมรอบนี้:</span>
+                        <span id="grand-total" style="color:#10b981;">0 กีบ</span>
+                    </div>
+
+                    <!-- ยอดสะสมค้างชำระจนกว่าจะเช็คบิล -->
+                    <div class="pending-total-box">
+                        <span>ยอดสั่งสะสมค้างชำระ:</span>
+                        <span id="accumulated-total">0 กีบ</span>
+                    </div>
+
+                    <button class="btn-send" id="btn-submit-order" disabled>🚀 ส่งรายการอาหาร</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. หน้าติดตามสถานะอาหาร -->
+        <div id="tab-status" class="tab-content">
+            <div class="card">
+                <h3 style="margin-top:0;">⏳ รายการอาหารที่สั่งไปแล้ว</h3>
+                <div id="order-history-list">
+                    <p style="text-align:center; color:#94a3b8;">กำลังโหลดข้อมูล...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. หน้าเรียกพนักงาน & เช็คบิล -->
+        <div id="tab-service" class="tab-content">
+            <div class="card">
+                <h3 style="margin-top:0; text-align:center;">🔔 เรียกร้องบริการ</h3>
+                
+                <div style="background: #f1f5f9; padding: 15px; border-radius: 10px; text-align:center; margin-bottom: 20px;">
+                    <div style="font-size: 0.9rem; color: #64748b;">ยอดรวมสุทธิที่ต้องชำระขณะนี้</div>
+                    <div id="bill-total-display" style="font-size: 1.8rem; font-weight: bold; color: #10b981; margin-top: 5px;">0 กีบ</div>
+                </div>
+
+                <div class="service-grid">
+                    <button class="btn-action btn-call" id="btn-call-waiter">
+                        <span style="font-size: 2rem;">🙋‍♂️</span>
+                        <span>เรียกพนักงาน</span>
+                    </button>
+                    <button class="btn-action btn-bill" id="btn-request-bill">
+                        <span style="font-size: 2rem;">🧾</span>
+                        <span>เช็คบิล / จ่ายเงิน</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Firebase SDK v9 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+        import { getDatabase, ref, onValue, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBuSEbFvAoU3Z9X3LktX_SlIm6EMHRRtsg",
+            authDomain: "my-restaurant-3da21.firebaseapp.com",
+            databaseURL: "https://my-restaurant-3da21-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "my-restaurant-3da21",
+            storageBucket: "my-restaurant-3da21.firebasestorage.app",
+            messagingSenderId: "932377209963",
+            appId: "1:932377209963:web:7265ed2f8ae8609166d52e",
+            measurementId: "G-77GR4JMMW9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // ----------------------------------------------------
+        // 🔊 ระบบสร้างเสียงแจ้งเตือนอัตโนมัติ (Web Audio API)
+        // ----------------------------------------------------
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playBeep(freq, type, duration, delay = 0) {
+            setTimeout(() => {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            }, delay);
+        }
+
+        // เสียง 1: ส่งออเดอร์สำเร็จ (ปิ๊ง-ป๋อง)
+        function playOrderSound() {
+            playBeep(523.25, 'sine', 0.2, 0);   // C5
+            playBeep(659.25, 'sine', 0.3, 150); // E5
+        }
+
+        // เสียง 2: เรียกพนักงาน (กระดิ่งสองครั้ง)
+        function playCallSound() {
+            playBeep(880, 'sine', 0.25, 0);   // A5
+            playBeep(880, 'sine', 0.25, 200); // A5
+        }
+
+        // เสียง 3: เช็คบิล (เสียงสั้นใส)
+        function playBillSound() {
+            playBeep(587.33, 'triangle', 0.15, 0);   // D5
+            playBeep(880.00, 'triangle', 0.25, 120); // A5
+        }
+        // ----------------------------------------------------
+
+        let cart = [];
+        let allMenusData = {};
+        let currentCategory = 'all';
+        let totalAccumulatedBill = 0;
+
+        const defaultImage = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&auto=format&fit=crop";
+
+        // รายการอาหาร 20 เมนู (หมวด: food / drink / dessert)
+        const fallbackMenus = {
+            // --- หมวดอาหาร (Food) 10 เมนู ---
+            "m1": { name: "ตำหมากหุ่ง (ส้มตำ)", price: 20000, category: "food", status: "available", image: "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=400" },
+            "m2": { name: "เฝ่อเนื้อ", price: 35000, category: "food", status: "available", image: "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=400" },
+            "m3": { name: "ลาบหมู", price: 40000, category: "food", status: "available", image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400" },
+            "m4": { name: "ไก่ย่าง", price: 45000, category: "food", status: "available", image: "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=400" },
+            "m5": { name: "ต้มยำกุ้ง", price: 50000, category: "food", status: "available", image: "https://images.unsplash.com/photo-1548943487-a2e4e43b4853?w=400" },
+            "m6": { name: "ข้าวผัดหมู", price: 30000, category: "food", status: "available", image: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400" },
+            "m7": { name: "ผัดไทยกุ้งสด", price: 40000, category: "food", status: "available", image: "https://images.unsplash.com/photo-1559847844-5315695dadae?w=400" },
+            "m8": { name: "ปลานึ่งมะนาว", price: 65000, category: "food", status: "available", image: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400" },
+            "m9": { name: "แกงเขียวหวานไก่", price: 40000, category: "food", status: "available", image: "https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=400" },
+            "m10": { name: "คอหมูย่าง", price: 45000, category: "food", status: "available", image: "https://images.unsplash.com/photo-1544025162-d76694265947?w=400" },
+
+            // --- หมวดเครื่องดื่ม (Drink) 6 เมนู ---
+            "m11": { name: "ชาเย็น", price: 15000, category: "drink", status: "available", image: "https://images.unsplash.com/photo-1517256064527-09c73fc73e38?w=400" },
+            "m12": { name: "กาแฟลาวเย็น", price: 20000, category: "drink", status: "available", image: "https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=400" },
+            "m13": { name: "เบียร์ลาว", price: 25000, category: "drink", status: "available", image: "https://images.unsplash.com/photo-1608270586620-248524c67de9?w=400" },
+            "m14": { name: "น้ำมะพร้าวสด", price: 20000, category: "drink", status: "available", image: "https://images.unsplash.com/photo-1525385133512-2f3bdd039054?w=400" },
+            "m15": { name: "น้ำส้มเค้นสด", price: 20000, category: "drink", status: "available", image: "https://images.unsplash.com/photo-1613478223719-2ab802602423?w=400" },
+            "m16": { name: "น้ำเปล่า", price: 8000, category: "drink", status: "available", image: "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=400" },
+
+            // --- หมวดของหวาน (Dessert) 4 เมนู ---
+            "m17": { name: "ข้าวเหนียวมะม่วง", price: 25000, category: "dessert", status: "available", image: "https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400" },
+            "m18": { name: "ไอศกรีมกะทิ", price: 20000, category: "dessert", status: "available", image: "https://images.unsplash.com/photo-1560008581-09826d1de69e?w=400" },
+            "m19": { name: "บัวลอยมะพร้าวอ่อน", price: 20000, category: "dessert", status: "available", image: "https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=400" },
+            "m20": { name: "เฉาก๊วยนมสด", price: 18000, category: "dessert", status: "available", image: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=400" }
+        };
+
+        // สลับแท็บหน้าหลัก
+        window.switchTab = function(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            if(tabName === 'menu') {
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+                document.getElementById('tab-menu').classList.add('active');
+            } else if(tabName === 'status') {
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                document.getElementById('tab-status').classList.add('active');
+            } else if(tabName === 'service') {
+                document.querySelectorAll('.tab-btn')[2].classList.add('active');
+                document.getElementById('tab-service').classList.add('active');
+            }
+        };
+
+        // กรองหมวดหมู่อาหาร/เครื่องดื่ม
+        window.filterCategory = function(cat) {
+            currentCategory = cat;
+            document.querySelectorAll('.cat-btn').forEach(btn => btn.classList.remove('active'));
+            if(event && event.target) event.target.classList.add('active');
+            renderMenuGrid();
+        };
+
+        // Render เมนูอาหาร
+        function renderMenuGrid() {
+            const container = document.getElementById('menu-container');
+            container.innerHTML = '';
+
+            const data = Object.keys(allMenusData).length > 0 ? allMenusData : fallbackMenus;
+
+            Object.entries(data).forEach(([id, item]) => {
+                const itemCat = item.category || 'food';
+                if (currentCategory !== 'all' && itemCat !== currentCategory) return;
+
+                const isOut = item.status === 'out_of_stock';
+                const imageUrl = item.image && item.image.trim() !== "" ? item.image : defaultImage;
+                
+                const cardHtml = document.createElement('div');
+                cardHtml.className = `menu-card ${isOut ? 'out-of-stock' : ''}`;
+                cardHtml.innerHTML = `
+                    ${isOut ? '<div class="badge-out">หมด</div>' : ''}
+                    <img src="${imageUrl}" alt="${item.name}" onerror="this.onerror=null; this.src='${defaultImage}';">
+                    <div class="menu-info">
+                        <div class="menu-name">${item.name}</div>
+                        <div class="menu-price">${Number(item.price).toLocaleString()} กีบ</div>
+                        <button class="btn-add" ${isOut ? 'disabled' : ''}>
+                            ${isOut ? 'สินค้าหมด' : '+ เพิ่มลงตระกร้า'}
+                        </button>
+                    </div>
+                `;
+
+                const btnAdd = cardHtml.querySelector('.btn-add');
+                if (!isOut && btnAdd) {
+                    btnAdd.onclick = () => addToCart(id, item.name, item.price);
+                }
+
+                container.appendChild(cardHtml);
+            });
+        }
+
+        // 1. ดึงข้อมูลเมนู
+        const menuRef = ref(database, 'menus');
+        onValue(menuRef, (snapshot) => {
+            const data = snapshot.val();
+            if(data) allMenusData = data;
+            renderMenuGrid();
+        }, () => renderMenuGrid());
+
+        // 2. ดึงข้อมูลสถานะอาหารและคำนวณยอดสะสมค้างชำระ
+        const ordersRef = ref(database, 'orders');
+        onValue(ordersRef, (snapshot) => {
+            const data = snapshot.val();
+            const currentTable = document.getElementById('table-num').value;
+            const historyContainer = document.getElementById('order-history-list');
+            historyContainer.innerHTML = '';
+            
+            totalAccumulatedBill = 0;
+
+            if (data) {
+                let hasOrders = false;
+                Object.entries(data).reverse().forEach(([id, order]) => {
+                    if (String(order.table) === String(currentTable) && order.status !== 'paid') {
+                        hasOrders = true;
+                        totalAccumulatedBill += Number(order.total || 0);
+
+                        let statusHtml = '<span class="status-badge status-pending">กำลังรอยืนยัน</span>';
+                        if (order.status === 'cooking') statusHtml = '<span class="status-badge status-cooking">👨‍🍳 กำลังทำอาหาร</span>';
+                        if (order.status === 'served') statusHtml = '<span class="status-badge status-served">✅ เสิร์ฟแล้ว</span>';
+
+                        let itemsList = order.items.map(i => `${i.name} x${i.quantity}`).join(', ');
+
+                        historyContainer.innerHTML += `
+                            <div style="border-bottom: 1px solid #e2e8f0; padding: 12px 0;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                                    <small style="color:#64748b;">${order.createdAt || ''}</small>
+                                    ${statusHtml}
+                                </div>
+                                <div style="font-weight:bold; font-size:0.95rem;">${itemsList}</div>
+                                <div style="color:#10b981; font-weight:bold; margin-top:3px;">รวม: ${Number(order.total).toLocaleString()} กีบ</div>
+                            </div>
+                        `;
+                    }
+                });
+
+                if (!hasOrders) {
+                    historyContainer.innerHTML = '<p style="text-align:center; color:#94a3b8;">ไม่มีรายการสั่งซื้อค้างชำระ</p>';
+                }
+            } else {
+                historyContainer.innerHTML = '<p style="text-align:center; color:#94a3b8;">ยังไม่มีประวัติการสั่งซื้อ</p>';
+            }
+
+            document.getElementById('accumulated-total').innerText = `${totalAccumulatedBill.toLocaleString()} กีบ`;
+            document.getElementById('bill-total-display').innerText = `${totalAccumulatedBill.toLocaleString()} กีบ`;
+        });
+
+        // เปลี่ยนโต๊ะให้รีโหลดรายการ
+        document.getElementById('table-num').onchange = function() {
+            renderCart();
+        };
+
+        // ระบบตระกร้า
+        window.addToCart = function(id, name, price) {
+            const existing = cart.find(item => item.id === id);
+            if (existing) existing.quantity += 1;
+            else cart.push({ id, name, price, quantity: 1 });
+            renderCart();
+        };
+
+        window.updateQuantity = function(id, change) {
+            const item = cart.find(i => i.id === id);
+            if (item) {
+                item.quantity += change;
+                if (item.quantity <= 0) cart = cart.filter(i => i.id !== id);
+            }
+            renderCart();
+        };
+
+        function renderCart() {
+            const cartList = document.getElementById('cart-list');
+            const grandTotalEl = document.getElementById('grand-total');
+            const btnSubmit = document.getElementById('btn-submit-order');
+
+            if (cart.length === 0) {
+                cartList.innerHTML = '<p style="text-align:center; color:#94a3b8;">ยังไม่มีรายการในตระกร้า</p>';
+                grandTotalEl.innerText = '0 กีบ';
+                btnSubmit.disabled = true;
+                return;
+            }
+
+            let total = 0;
+            cartList.innerHTML = '';
+
+            cart.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                total += itemTotal;
+                cartList.innerHTML += `
+                    <div class="cart-item">
+                        <div>
+                            <strong style="font-size:0.9rem;">${item.name}</strong><br>
+                            <small style="color:#64748b;">${item.price.toLocaleString()} x ${item.quantity}</small>
+                        </div>
+                        <div class="cart-qty">
+                            <button class="btn-qty" onclick="updateQuantity('${item.id}', -1)">-</button>
+                            <span style="font-weight:bold;">${item.quantity}</span>
+                            <button class="btn-qty" onclick="updateQuantity('${item.id}', 1)">+</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            grandTotalEl.innerText = `${total.toLocaleString()} กีบ`;
+            btnSubmit.disabled = false;
+        }
+
+        // 🚀 ส่งคำสั่งซื้อ (พร้อมเสียงแจ้งเตือน)
+        document.getElementById('btn-submit-order').onclick = function() {
+            const tableNum = document.getElementById('table-num').value;
+            const total = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+
+            push(ref(database, 'orders'), {
+                table: tableNum,
+                items: cart,
+                total: total,
+                status: 'pending',
+                timestamp: serverTimestamp(),
+                createdAt: new Date().toLocaleTimeString('th-TH')
+            }).then(() => {
+                playOrderSound(); // 🔊 เล่นเสียงส่งออเดอร์สำเร็จ
+                alert(`✅ ส่งรายการสั่งอาหารของ โต๊ะ ${tableNum} เรียบร้อยแล้ว!`);
+                cart = [];
+                renderCart();
+                switchTab('status');
+            }).catch(error => {
+                alert('❌ เกิดข้อผิดพลาด: ' + error.message);
+            });
+        };
+
+        // 🙋‍♂️ เรียกพนักงาน (พร้อมเสียงแจ้งเตือน)
+        document.getElementById('btn-call-waiter').onclick = function() {
+            const tableNum = document.getElementById('table-num').value;
+            push(ref(database, 'notifications'), {
+                table: tableNum,
+                type: 'call_waiter',
+                message: `โต๊ะ ${tableNum} เรียกพนักงาน`,
+                timestamp: serverTimestamp(),
+                status: 'unread'
+            }).then(() => {
+                playCallSound(); // 🔊 เล่นเสียงกระดิ่งเรียกพนักงาน
+                alert(`🔔 ส่งสัญญาณเรียกพนักงานของ โต๊ะ ${tableNum} เรียบร้อยครับ`);
+            });
+        };
+
+        // 🧾 เรียกเช็คบิล (พร้อมเสียงแจ้งเตือน)
+        document.getElementById('btn-request-bill').onclick = function() {
+            const tableNum = document.getElementById('table-num').value;
+            push(ref(database, 'notifications'), {
+                table: tableNum,
+                type: 'request_bill',
+                amount: totalAccumulatedBill,
+                message: `โต๊ะ ${tableNum} ขอเช็คบิล (ยอดรวม ${totalAccumulatedBill.toLocaleString()} กีบ)`,
+                timestamp: serverTimestamp(),
+                status: 'unread'
+            }).then(() => {
+                playBillSound(); // 🔊 เล่นเสียงคิดเงิน
+                alert(`🧾 ส่งสัญญาณขอเช็คบิลยอด ${totalAccumulatedBill.toLocaleString()} กีบ ของ โต๊ะ ${tableNum} เรียบร้อยครับ`);
+            });
+        };
+    </script>
+</body>
+</html>
